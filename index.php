@@ -3,6 +3,41 @@ require("config/config.php");
 require("lib/db.php");
 $conn = db_init($config["host"], $config["duser"], $config["dpw"], $config["dname"]);
 $result = mysqli_query($conn,'SELECT *FROM topic');
+$list = '' ;
+
+while($row = mysqli_fetch_assoc($result)){ //mysqli_fetch_assoc mysqli_fetch_array 차이점 알아보기
+//  $escaped_title = htmlspecialchars($row['title']);
+//  $list = $list."<li><a herf=\"http://localhost/index.php?id={$row['id']}\">{$escaped_title}</a></li>";
+ $list = $list."<li><a href=\"http://localhost/index.php?id={$row['id']}\">" .htmlspecialchars($row['title']). "</a></li>";
+
+}
+
+$article = array(
+  'title' => 'Welcome',
+  'name'  => '관리자',
+  'description' => '사이트에 오신걸 환영합니다. '
+);
+
+$update_link = '';
+$delete_link = '';
+
+if(empty($_GET['id'])==false){// 아이디값이 없지 않다면, isset($_GET['id'])
+  $filtered_id = mysqli_real_escape_string($conn, $_GET['id']); // sql injection 보안
+  $sql = "SELECT topic.id, title, name,description FROM topic LEFT JOIN user ON topic.author=user.id WHERE topic.id={$filtered_id}";
+  $result = mysqli_query($conn,$sql);
+  $row = mysqli_fetch_assoc($result);
+  $article['title'] = htmlspecialchars($row['title']);
+  $article['name'] = htmlspecialchars($row['name']);
+  $article['description'] = strip_tags($row['description'], '<a><h1><h2><h3><h4><h5><ul><ol><li>');
+
+  $update_link = '<a href="http://localhost/update.php?id='.$_GET['id'].'" class="btn btn-success  btn-lg">수정</a>';
+  $delete_link= '
+  <form  action="delete_process.php" method="post" >
+      <input type="hidden" name="id" value= '.$_GET['id'].' >
+      <input type="submit" value="삭제" class="btn btn-success  btn-lg">
+  </form>
+  ';
+}
 ?>
 <!DOCTYPE html>
 <html>
@@ -21,67 +56,46 @@ $result = mysqli_query($conn,'SELECT *FROM topic');
 <body id ="target">
   <div class="container">
 
-	<header class="jumbotron text-center">
-		<img src="https://s3.ap-northeast-2.amazonaws.com/opentutorials-user-file/course/94.png" alt="생활코딩" class="img-circle" id ="logo">
-		<h1><a href="http://localhost/index.php">Javascript</a></h1>
-	</header>
+  	<header class="jumbotron text-center">
+  		<img src="https://s3.ap-northeast-2.amazonaws.com/opentutorials-user-file/course/94.png" alt="생활코딩" class="img-circle" id ="logo">
+  		<h1><a href="http://localhost/index.php">Javascript</a></h1>
+  	</header>
 
-<div class="row">
-  <nav class ="col-md-3">
-    <ol class="nav nav-pills nav-stacked">
-      <?php
-      while($row = mysqli_fetch_assoc($result)){
+      <div class="row">
 
-        echo '<li><a href="http://localhost/index.php?id='.$row['id'].'">'. htmlspecialchars($row['title']).'</a></li>'."\n";
+        <nav class ="col-md-3">
+          <ol class="nav nav-pills nav-stacked">
+            <?php echo $list; ?>
+          </ol>
+        </nav>
 
-      }
+      <div class="col-md-9">
+        <article>
 
-      ?>
-    </ol>
-  </nav>
+          <h2> <?php echo $article['title']; ?> </h2>
+          <p>  <?php echo $article['name']; ?> </p>
+          <?php echo $article['description']; ?>
 
-  <div class="col-md-9">
+        </article>
+        <hr>
 
-    <article>
-     <?php
-     if(empty($_GET['id'])==false){// 아이디값이 없지 않다면
-
-       $sql = "SELECT topic.id, title, name,description FROM topic LEFT JOIN user ON topic.author=user.id WHERE topic.id=".$_GET['id'];
-       $result = mysqli_query($conn,$sql);
-       $row = mysqli_fetch_assoc($result);
-       echo '<h2>'.htmlspecialchars($row['title']).'</h2>';
-       echo '<p>'.htmlspecialchars($row['name']).'</p>';
-       echo strip_tags($row['description'], '<a><h1><h2><h3><h4><h5><ul><ol><li>');
-       //echo strip_tags($row['description'], '<a><h1><h2><h3><h4><h5><ol><ul><li>');
-     }
-      ?>
-    </article>
-    <hr>
     <div id="control">
       <div class="btn-group" role="group" aria-label="...">
       <input type="button" value="white" onclick="document.getElementById('target').className='white'" class="btn btn-default  btn-lg"/>
       <input type="button" value="black" onclick="document.getElementById('target').className='black'" class="btn btn-default  btn-lg" />
     </div>
 
-
       <a href="http://localhost/write.php" class="btn btn-success  btn-lg">쓰기</a>
-      <a href="http://localhost/update.php?id=<?php echo $_GET['id'] ?>" class="btn btn-success  btn-lg">수정</a>
 
-
-              <form  action="delete.php" method="post" >
-                  <input type="hidden" name="id" value= <?php echo $_GET['id'] ?> >
-                  <input type="submit" value="삭제" class="btn btn-success  btn-lg">
-              </form>
-
-
-
+        <?php echo $update_link;
+              echo $delete_link;
+        ?>
 
     </div>
   </div>
 </div>
 
 </div>
-
 
 <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>

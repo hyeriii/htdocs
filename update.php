@@ -3,7 +3,37 @@ require("config/config.php");
 require("lib/db.php");
 $conn = db_init($config["host"] , $config["duser"] , $config["dpw"] , $config["dname"]);
 $result = mysqli_query($conn,'SELECT *FROM topic');
- ?>
+
+$list = '' ;
+
+while($row = mysqli_fetch_assoc($result)){
+//  $escaped_title = htmlspecialchars($row['title']);
+//  $list = $list."<li><a herf=\"http://localhost/index.php?id={$row['id']}\">{$escaped_title}</a></li>";
+ $list = $list."<li><a href=\"http://localhost/index.php?id={$row['id']}\">" .htmlspecialchars($row['title']). "</a></li>";
+}
+
+$article = array(
+  'title' => 'Welcome',
+  'name'  => '관리자',
+  'description' => '사이트에 오신걸 환영합니다. '
+);
+
+$update_link = '';
+
+if(empty($_GET['id'])==false){// 아이디값이 없지 않다면, isset($_GET['id'])
+  $filtered_id = mysqli_real_escape_string($conn, $_GET['id']); // sql injection 보안
+  $sql = "SELECT topic.id, title, name,description FROM topic LEFT JOIN user ON topic.author=user.id WHERE topic.id={$filtered_id}";
+  $result = mysqli_query($conn,$sql);
+  $row = mysqli_fetch_assoc($result);
+  $article['title'] = htmlspecialchars($row['title']);
+  $article['name'] = htmlspecialchars($row['name']);
+  $article['description'] = strip_tags($row['description'], '<a><h1><h2><h3><h4><h5><ul><ol><li>');
+
+  $update_link = '<a href="http://localhost/update.php?id='.$_GET['id'].'" class="btn btn-success  btn-lg">수정</a>';
+
+}
+
+?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -26,36 +56,30 @@ $result = mysqli_query($conn,'SELECT *FROM topic');
 
       <nav class="col-md-3">
         <ol class="nav nav-pills nav-stacked">
-        <?php
-        while( $row = mysqli_fetch_assoc($result)){
-          echo '<li><a href="http://localhost/index.php?id='.$row['id'].'">'.htmlspecialchars($row['title']).'</a></li>'."\n";
-        }
-        ?>
+          <?php echo $list; ?>
         </ol>
       </nav>
+
       <div class="col-md-9">
 
         <article>
-          <?php
-            $sql = "SELECT name, title, description  FROM topic, user WHERE topic.id = '".$_GET['id']."' AND author = user.id ";
-            $result = mysqli_query($conn, $sql);
-            $row = mysqli_fetch_assoc($result);
-           ?>
-          <form action="update_process.php?id=<?php echo $_GET['id'] ?>" method="post">
+
+          <form action="update_process.php" method="post">
+              <input type="hidden" name="id" value="<?php echo $_GET['id']; ?>">
 
             <div class="form-group">
               <label for="form-title">제목</label>
-              <input type="text" class="form-control" name="title" id="form-title" value="<?php echo htmlspecialchars($row['title']); ?>">
+              <input type="text" class="form-control" name="title" id="form-title" value="<?php echo $article['title']; ?>">
             </div>
 
             <div class="form-group">
               <label for="form-author">작성자</label>
-              <input type="text" class="form-control" name="author" id="form-author" value="<?php echo htmlspecialchars($row['name']); ?>">
+              <input type="text" class="form-control" name="author" id="form-author" value="<?php echo $article['name']; ?>">
             </div>
 
             <div class="form-group">
               <label for="form-description">본문</label>
-              <textarea class="form-control" rows="10" name="description"  id="form-description" > <?php echo htmlspecialchars($row['description']); ?></textarea>
+              <textarea class="form-control" rows="10" name="description"  id="form-description" > <?php echo $article['description']; ?></textarea>
             </div>
 
             <input type="submit" name="name" class="btn btn-default  btn-lg">

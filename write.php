@@ -3,6 +3,14 @@ require("config/config.php");
 require("lib/db.php");
 $conn = db_init($config["host"] , $config["duser"] , $config["dpw"] , $config["dname"]);
 $result = mysqli_query($conn,'SELECT *FROM topic');
+$list = '' ;
+
+while($row = mysqli_fetch_assoc($result)){
+//  $escaped_title = htmlspecialchars($row['title']);
+//  $list = $list."<li><a herf=\"http://localhost/index.php?id={$row['id']}\">{$escaped_title}</a></li>";
+ $list = $list."<li><a href=\"http://localhost/index.php?id={$row['id']}\">" .htmlspecialchars($row['title']). "</a></li>";
+}
+
  ?>
 <!DOCTYPE html>
 <html>
@@ -26,12 +34,8 @@ $result = mysqli_query($conn,'SELECT *FROM topic');
 
       <nav class="col-md-3">
         <ol class="nav nav-pills nav-stacked">
-        <?php
-        while( $row = mysqli_fetch_assoc($result)){
-          echo '<li><a href="http://localhost/index.php?id='.$row['id'].'">'.htmlspecialchars($row['title']).'</a></li>'."\n";
-        }
-        ?>
-        </ ol>
+        <?php echo $list; ?>
+        </ol>
       </nav>
       <div class="col-md-9">
 
